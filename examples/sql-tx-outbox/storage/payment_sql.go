@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"sample/domain/payment"
 
-	streamsql "github.com/alexandria-oss/streams/driver/sql"
+	"github.com/alexandria-oss/streams/persistence"
 )
 
 type PaymentSQL struct {
@@ -14,7 +14,7 @@ type PaymentSQL struct {
 var _ payment.Repository = PaymentSQL{}
 
 func (p PaymentSQL) Save(ctx context.Context, data payment.Payment) error {
-	tx, err := streamsql.GetTransactionContext[*sql.Tx](ctx)
+	tx, err := persistence.GetTransactionContext[*sql.Tx](ctx)
 	if err != nil {
 		return err
 	}

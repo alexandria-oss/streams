@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	streamsql "github.com/alexandria-oss/streams/driver/sql"
+	"github.com/alexandria-oss/streams/persistence"
 )
 
-// TODO: Move this middleware to command handler middleware. That will centralize transaction context usage.
+// TODO: Move this middleware to command bus when exec handler (cmds using decorators?). That will centralize transaction context usage.
 
 type ServiceTransactionContext struct {
 	db   *sql.DB
@@ -35,7 +35,7 @@ func (s ServiceTransactionContext) Create(ctx context.Context, userID string, am
 		ReadOnly:  false,
 	})
 
-	scopedCtx := streamsql.SetTransactionContext[*sql.Tx](ctx, tx)
+	scopedCtx := persistence.SetTransactionContext[*sql.Tx](ctx, tx)
 	payment, nextErr := s.next.Create(scopedCtx, userID, amount)
 	if nextErr != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {

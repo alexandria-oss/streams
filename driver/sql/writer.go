@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/alexandria-oss/streams"
+	"github.com/alexandria-oss/streams/persistence"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -25,7 +26,7 @@ func NewWriter(cfg Config) Writer {
 }
 
 func (w Writer) Write(ctx context.Context, msgBatch []streams.Message) (err error) {
-	tx, err := GetTransactionContext[*sql.Tx](ctx)
+	tx, err := persistence.GetTransactionContext[*sql.Tx](ctx)
 	if err != nil {
 		return err
 	}
