@@ -1,0 +1,16 @@
+syntax = "proto3";
+package streams;
+
+option go_package = "github.com/alexandria-oss/streams/persistence";
+option optimize_for = SPEED;
+
+message TransportMessage {
+  string messageId = 1;
+  string streamName = 2;
+  string contentType = 3;
+  bytes data = 4;
+}
+
+message TransportMessageBatch {
+  repeated TransportMessage messages = 1;
+}

@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:alpine
+    container_name: postgres
+    restart: on-failure
+    ports:
+      - '6432:5432'
+    environment:
+      POSTRGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: sample_database
+    volumes:
+      - ./sample_database.sql:/docker-entrypoint-initdb.d/database.sql

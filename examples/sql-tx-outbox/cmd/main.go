@@ -19,10 +19,13 @@ func main() {
 	defer db.Close()
 
 	repo := storage.PaymentSQL{}
-	w := streamsql.NewWriter(streamsql.Config{
-		IdentifierFactory: streams.NewUUID,
-		WriterEgressTable: "streams_egress",
-	})
+	w := streamsql.
+		NewWriter(
+			streamsql.WithEgressTable("streams_egress"),
+		).
+		WithParentConfig(
+			streams.WithIdentifierFactory(streams.NewUUID),
+		)
 	var svc payment.Service
 	svc = payment.NewService(repo, w)
 	svc = payment.NewServiceTransactionContext(db, svc)
