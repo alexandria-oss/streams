@@ -20,6 +20,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// A TransportMessage is a unit of information used by `streams` package to pass information between internal
+// systems such as proxy agents.
 type TransportMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -91,6 +93,8 @@ func (x *TransportMessage) GetData() []byte {
 	return nil
 }
 
+// A TransportMessageBatch is an aggregate of TransportMessage(s) used by `streams` package to pass information between
+// internal systems such as proxy agents.
 type TransportMessageBatch struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

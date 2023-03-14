@@ -30,6 +30,7 @@ In order for this driver to work, the SQL database MUST have an outbox table wit
 CREATE TABLE IF NOT EXISTS streams_egress(
     batch_id CHAR(27) PRIMARY KEY,
     in_flight BOOLEAN DEFAULT FALSE,
+    message_count INTEGER DEFAULT 0,
     raw_data BYTEA NOT NULL
 );
 ```

@@ -21,7 +21,7 @@ import (
 // the sql.Tx instance from the context. If no context is found, then Writer.Write will fail.
 //
 // Finally, the main reason to apply the transactional outbox pattern is to obtain write atomicity between a database
-// and an event bus.
+// and an external message stream (i.e. message broker, event bus).
 //
 // Transactional outbox pattern reference: https://microservices.io/patterns/data/transactional-outbox.html
 type Writer struct {
@@ -96,7 +96,7 @@ func (w Writer) Write(ctx context.Context, msgBatch []streams.Message) (err erro
 
 	var msgBatchAny any = msgBatch
 	if w.cfg.Codec.ApplicationType() == codec.ProtocolBuffersApplicationType {
-		msgBatchAny = persistence.NewTransportMessages(msgBatch)
+		msgBatchAny = persistence.NewTransportMessageBatch(msgBatch)
 	}
 
 	encodedData, err := w.cfg.Codec.Encode(msgBatchAny)

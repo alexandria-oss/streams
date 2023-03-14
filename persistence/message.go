@@ -4,6 +4,7 @@ import (
 	"github.com/alexandria-oss/streams"
 )
 
+// NewTransportMessage allocates a TransportMessage from a streams.Message.
 func NewTransportMessage(msg streams.Message) *TransportMessage {
 	return &TransportMessage{
 		MessageId:   msg.ID,
@@ -13,7 +14,8 @@ func NewTransportMessage(msg streams.Message) *TransportMessage {
 	}
 }
 
-func NewTransportMessages(msgs []streams.Message) *TransportMessageBatch {
+// NewTransportMessageBatch allocates a TransportMessageBatch for each of streams.Message(s).
+func NewTransportMessageBatch(msgs []streams.Message) *TransportMessageBatch {
 	if len(msgs) == 0 {
 		return nil
 	}

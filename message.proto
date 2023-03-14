@@ -4,6 +4,8 @@ package streams;
 option go_package = "github.com/alexandria-oss/streams/persistence";
 option optimize_for = SPEED;
 
+// A TransportMessage is a unit of information used by `streams` package to pass information between internal
+// systems such as proxy agents.
 message TransportMessage {
   string messageId = 1;
   string streamName = 2;
@@ -11,6 +13,8 @@ message TransportMessage {
   bytes data = 4;
 }
 
+// A TransportMessageBatch is an aggregate of TransportMessage(s) used by `streams` package to pass information between
+// internal systems such as proxy agents.
 message TransportMessageBatch {
   repeated TransportMessage messages = 1;
 }
