@@ -8,6 +8,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
+// WriteEvents inserts events into a stream. THIS FUNCTION is a workaround, please implement an event bus instead.
 func WriteEvents(ctx context.Context, w streams.Writer, ag domain.Aggregate) error {
 	events := ag.PullEvents()
 	batch := make([]streams.Message, 0, len(events))

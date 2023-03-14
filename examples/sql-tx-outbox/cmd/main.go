@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"sample/domain"
 	"sample/domain/payment"
 	"sample/storage"
 
@@ -26,10 +27,15 @@ func main() {
 		WithParentConfig(
 			streams.WithIdentifierFactory(streams.NewUUID),
 		)
-	var svc payment.Service
-	svc = payment.NewService(repo, w)
-	svc = payment.NewServiceTransactionContext(db, svc)
-	if _, err = svc.Create(context.TODO(), "aruiz", 99.99); err != nil {
+	var cmdBus domain.SyncCommandBus = domain.NewMemoryCommandBus()
+	_ = cmdBus.Register(payment.CreateCommand{}, storage.WithSQLTransaction(db, payment.HandleCreateCommand))
+	payment.DefaultService = payment.NewService(repo, w)
+
+	err = cmdBus.Exec(context.TODO(), payment.CreateCommand{
+		UserID: "aruiz",
+		Amount: 99.99,
+	})
+	if err != nil {
 		panic(err)
 	}
 }

@@ -9,25 +9,21 @@ import (
 	"github.com/google/uuid"
 )
 
-type Service interface {
-	Create(ctx context.Context, userID string, amount float64) (Payment, error)
-}
-
-type ServiceImpl struct {
+type Service struct {
 	repo        Repository
 	eventWriter streams.Writer // TODO: Use a higher-level component instead writer such as bus
 }
 
-var _ Service = ServiceImpl{}
+var DefaultService Service
 
-func NewService(repo Repository, w streams.Writer) ServiceImpl {
-	return ServiceImpl{
+func NewService(repo Repository, w streams.Writer) Service {
+	return Service{
 		repo:        repo,
 		eventWriter: w,
 	}
 }
 
-func (s ServiceImpl) Create(ctx context.Context, userID string, amount float64) (Payment, error) {
+func (s Service) Create(ctx context.Context, userID string, amount float64) error {
 	payment := Payment{
 		ID:            uuid.NewString(),
 		UserID:        userID,
@@ -43,8 +39,8 @@ func (s ServiceImpl) Create(ctx context.Context, userID string, amount float64) 
 	})
 
 	if err := s.repo.Save(ctx, payment); err != nil {
-		return Payment{}, err
+		return err
 	}
 
-	return payment, messaging.WriteEvents(ctx, s.eventWriter, payment)
+	return messaging.WriteEvents(ctx, s.eventWriter, payment)
 }

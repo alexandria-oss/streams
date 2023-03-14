@@ -25,7 +25,7 @@ func (p PaymentSQL) Save(ctx context.Context, data payment.Payment) error {
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, "INSERT INTO user_payments_stats(user_id, amount) VALUES ($1,$2)",
-		data.UserID, data.Amount*2) // only for tx testing purposes
+	//_, err = tx.ExecContext(ctx, "INSERT INTO user_payments_stats(user_id, amount) VALUES ($1,$2)",
+	//	data.UserID, data.Amount*2) // only for tx testing purposes
 	return err
 }
