@@ -12,17 +12,12 @@ in order to stream messages into desired infrastructure non-supported by `Amazon
 
 ## Requirements
 
-In order for this driver to work, the SQL database MUST have an outbox table with the following schema 
+In order for this driver to work, the database MUST have an outbox table with the following schema 
 (_called streams_egress by default_).
 
 
-```genericsql
--- Using KSUID as primary key, hence the CHAR(27) type.
---
--- NOTE: BYTEA type is a Postgres type used for binary array types.
-CREATE TABLE IF NOT EXISTS streams_egress(
-    batch_id CHAR(27) PRIMARY KEY,
-    in_flight BOOLEAN DEFAULT FALSE,
-    raw_data BYTEA NOT NULL
-);
+```json
+{
+  "fields": {}
+}
 ```
