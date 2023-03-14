@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/alexandria-oss/streams"
 	"github.com/alexandria-oss/streams/driver/chanbuf"
 	"github.com/stretchr/testify/assert"
@@ -114,4 +116,51 @@ func TestBus(t *testing.T) {
 			assert.ErrorIs(t, tt.expErr, bus.Publish(tt.inMsg))
 		})
 	}
+}
+
+func TestReaderWriter(t *testing.T) {
+	var reader streams.Reader = chanbuf.NewReader(nil)
+	var writer streams.Writer = chanbuf.NewWriter(nil)
+	go chanbuf.Start()
+
+	wasHandlerExec := false
+	waitChan := make(chan struct{}, 1)
+
+	err := reader.Read(context.TODO(), "foo", func(ctx context.Context, msg streams.Message) error {
+		wasHandlerExec = true
+		waitChan <- struct{}{}
+		return nil
+	})
+	require.NoError(t, err)
+
+	err = writer.Write(context.TODO(), []streams.Message{
+		{
+			ID:          "123",
+			StreamName:  "foo",
+			ContentType: "application/text",
+			Data:        []byte("the quick brown fox"),
+		},
+	})
+	assert.NoError(t, err)
+	err = chanbuf.Publish(streams.Message{
+		ID:          "456",
+		StreamName:  "foo",
+		ContentType: "application/text",
+		Data:        []byte("the quick brown fox v2"),
+	})
+	assert.NoError(t, err)
+
+	<-waitChan
+	assert.True(t, wasHandlerExec)
+	chanbuf.Shutdown()
+
+	err = writer.Write(context.TODO(), []streams.Message{
+		{
+			ID:          "789",
+			StreamName:  "foo",
+			ContentType: "application/text",
+			Data:        []byte("the quick brown fox v3"),
+		},
+	})
+	assert.Error(t, err) // bus is offline, reject message
 }

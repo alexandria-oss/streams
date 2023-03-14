@@ -1,3 +1,9 @@
+unit-test:
+	go test ./... -coverprofile coverage.out .
+
+unit-test-html: unit-test
+	go tool cover -html=coverage.out
+
 TARGET_EXEC := alexandria
 
 GO_BUILD_DIR := ./persistence
@@ -12,8 +18,4 @@ $(GO_BUILD_DIR)/$(TARGET_EXEC): $(SRCS)
 	rsync -a $(GO_BUILD_DIR)/github.com/alexandria-oss/streams/persistence/ $(GO_BUILD_DIR)
 	rm -r $(GO_BUILD_DIR)/github.com
 
-unit-test-cov:
-	go test ./... -coverprofile coverage.out .
-
-unit-test-cov-html: unit-test-cov
-	go tool cover -html=coverage.out
+gen-proto: $(GO_BUILD_DIR)/$(TARGET_EXEC)

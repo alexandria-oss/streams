@@ -15,7 +15,7 @@ var _ streams.Writer = Writer{}
 func NewWriter(b *Bus) Writer {
 	if b == nil {
 		newDefaultBus()
-		b = defaultBus
+		b = DefaultBus
 	}
 
 	return Writer{
@@ -23,7 +23,11 @@ func NewWriter(b *Bus) Writer {
 	}
 }
 
-func (w Writer) Write(ctx context.Context, msgBatch []streams.Message) error {
-	//TODO implement me
-	panic("implement me")
+func (w Writer) Write(_ context.Context, msgBatch []streams.Message) error {
+	for _, msg := range msgBatch {
+		if err := w.bus.Publish(msg); err != nil {
+			return err
+		}
+	}
+	return nil
 }

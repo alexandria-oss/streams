@@ -39,8 +39,8 @@ type Config struct {
 }
 
 var (
-	// defaultBus global Bus instance used by both Writer and Reader if passed Bus instance was nil.
-	defaultBus *Bus
+	// DefaultBus global Bus instance used by both Writer and Reader if passed Bus instance was nil.
+	DefaultBus *Bus
 	// DefaultBusConfig global Bus instance configuration used by both Writer and Reader if passed Bus instance was nil.
 	DefaultBusConfig Config
 	defaultBusOnce   = &sync.Once{}
@@ -75,7 +75,7 @@ func NewBus(cfg Config) *Bus {
 
 func newDefaultBus() {
 	defaultBusOnce.Do(func() {
-		defaultBus = NewBus(DefaultBusConfig)
+		DefaultBus = NewBus(DefaultBusConfig)
 	})
 }
 
@@ -166,4 +166,29 @@ func (b *Bus) Subscribe(stream string, handler streams.ReaderHandleFunc) {
 	}
 
 	b.readerReg.Store(stream, subscribers)
+}
+
+// Start spins up the Bus readers, blocking the I/O until Bus.Shutdown is called.
+func Start() {
+	DefaultBus.Start()
+}
+
+// Shutdown disposes allocated resources and signals internal processes for a graceful shutdown.
+//
+// This operation might block I/O as it waits for in-flight reader processes to finish -either by success or timeout-.
+func Shutdown() {
+	DefaultBus.Shutdown()
+}
+
+// Publish sends a message to one or many readers subscribed to msg.StreamName (aka. fan-out) in a fire-and-forget
+// way meaning the internal writer only cares about writing to the queue whereas subscribers are independent processes.
+//
+// This routine will fail if Bus is shut down.
+func Publish(msg streams.Message) error {
+	return DefaultBus.Publish(msg)
+}
+
+// Subscribe appends a reader handler to a stream.
+func Subscribe(stream string, handler streams.ReaderHandleFunc) {
+	DefaultBus.Subscribe(stream, handler)
 }

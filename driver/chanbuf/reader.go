@@ -15,7 +15,7 @@ var _ streams.Reader = Reader{}
 func NewReader(b *Bus) Reader {
 	if b == nil {
 		newDefaultBus()
-		b = defaultBus
+		b = DefaultBus
 	}
 
 	return Reader{
@@ -23,7 +23,7 @@ func NewReader(b *Bus) Reader {
 	}
 }
 
-func (r Reader) Read(ctx context.Context, stream string) error {
-	//TODO implement me
-	panic("implement me")
+func (r Reader) Read(_ context.Context, stream string, handler streams.ReaderHandleFunc) error {
+	r.bus.Subscribe(stream, handler)
+	return nil
 }
