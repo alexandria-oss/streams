@@ -57,7 +57,7 @@ func NewBus(cfg Config) *Bus {
 
 	logger := cfg.Logger
 	if logger == nil {
-		logger = log.New(os.Stdout, "", 0)
+		logger = log.New(os.Stdout, "streams.chanbuf: ", 0)
 	}
 
 	readyWg := &sync.WaitGroup{}
@@ -96,7 +96,7 @@ func (b *Bus) Start() {
 		// This mechanism guarantees every reader process is waited to finish by other internal mechanisms such as Shutdown.
 		subsAny, ok := b.readerReg.Load(msg.StreamName)
 		if !ok {
-			b.logger.Printf("streams: stream <%s> has no subscribers, skipping", msg.StreamName)
+			b.logger.Printf("stream <%s> has no subscribers, skipping", msg.StreamName)
 			b.inFlightProcWg.Done() // dispose message root lock
 			continue
 		}
@@ -110,7 +110,7 @@ func (b *Bus) Start() {
 				timeoutCtx, cancel := context.WithTimeout(b.baseCtx, b.readerHandlerTimeout)
 				defer cancel()
 				if err := handler(timeoutCtx, msgCopy); err != nil {
-					b.logger.Printf("streams: stream <%s> handler failed, err: %s", msgCopy.StreamName,
+					b.logger.Printf("stream <%s> handler failed, err: %s", msgCopy.StreamName,
 						err.Error())
 				}
 			}(sub, msg)
