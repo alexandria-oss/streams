@@ -10,7 +10,6 @@ import (
 	"github.com/alexandria-oss/streams"
 	"github.com/alexandria-oss/streams/codec"
 	"github.com/alexandria-oss/streams/persistence"
-	"github.com/google/uuid"
 	"github.com/segmentio/ksuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +17,6 @@ import (
 
 func TestNewWriter(t *testing.T) {
 	writerWithCfg := NewWriterWithConfig(WriterConfig{
-		WriterConfig:      streams.DefaultWriterConfig,
 		WriterEgressTable: "foo_table",
 	})
 	assert.Equal(t, "foo_table", writerWithCfg.cfg.WriterEgressTable)
@@ -26,13 +24,11 @@ func TestNewWriter(t *testing.T) {
 	tests := []struct {
 		name         string
 		opts         []WriterOption
-		parentOpts   []streams.WriterOption
 		validateFunc func(t *testing.T, w Writer)
 	}{
 		{
-			name:       "default values",
-			opts:       nil,
-			parentOpts: nil,
+			name: "default values",
+			opts: nil,
 			validateFunc: func(t *testing.T, w Writer) {
 				id, _ := w.cfg.IdentifierFactory()
 				_, errID := ksuid.Parse(id)
@@ -42,12 +38,11 @@ func TestNewWriter(t *testing.T) {
 			},
 		},
 		{
-			name: "with local change",
+			name: "with change",
 			opts: []WriterOption{
 				WithEgressTable("foo_table"),
 				WithCodec(codec.JSON{}),
 			},
-			parentOpts: nil,
 			validateFunc: func(t *testing.T, w Writer) {
 				id, _ := w.cfg.IdentifierFactory()
 				_, errID := ksuid.Parse(id)
@@ -56,41 +51,11 @@ func TestNewWriter(t *testing.T) {
 				assert.Equal(t, "foo_table", w.cfg.WriterEgressTable)
 			},
 		},
-		{
-			name: "with parent change",
-			opts: nil,
-			parentOpts: []streams.WriterOption{
-				streams.WithIdentifierFactory(streams.NewUUID),
-			},
-			validateFunc: func(t *testing.T, w Writer) {
-				id, _ := w.cfg.IdentifierFactory()
-				_, errID := uuid.Parse(id)
-				assert.NoError(t, errID)
-				assert.IsType(t, codec.ProtocolBuffers{}, w.cfg.Codec)
-			},
-		},
-		{
-			name: "with overall change",
-			opts: []WriterOption{
-				WithEgressTable("foo_table"),
-				WithCodec(codec.ProtocolBuffers{}),
-			},
-			parentOpts: []streams.WriterOption{
-				streams.WithIdentifierFactory(streams.NewUUID),
-			},
-			validateFunc: func(t *testing.T, w Writer) {
-				id, _ := w.cfg.IdentifierFactory()
-				_, errID := uuid.Parse(id)
-				assert.NoError(t, errID)
-				assert.IsType(t, codec.ProtocolBuffers{}, w.cfg.Codec)
-				assert.Equal(t, "foo_table", w.cfg.WriterEgressTable)
-			},
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := NewWriter(tt.opts...).WithParentConfig(tt.parentOpts...)
+			w := NewWriter(tt.opts...)
 			tt.validateFunc(t, w)
 		})
 	}
@@ -141,12 +106,10 @@ func TestWriter_Write(t *testing.T) {
 			name: "codec fail",
 			writer: NewWriter(WithCodec(codec.Mock{
 				EncodeError: errors.New("codec error"),
-			})).
-				WithParentConfig(
-					streams.WithIdentifierFactory(func() (string, error) {
-						return "1", nil
-					}),
-				),
+			}), WithIdentifierFactory(func() (string, error) {
+				return "1", nil
+			}),
+			),
 			ctx: persistence.SetTransactionContext[*sql.Tx](context.TODO(), tx),
 			inMsgs: []streams.Message{
 				{
@@ -159,12 +122,9 @@ func TestWriter_Write(t *testing.T) {
 		},
 		{
 			name: "id factory fail",
-			writer: NewWriter(WithCodec(codec.Mock{})).
-				WithParentConfig(
-					streams.WithIdentifierFactory(func() (string, error) {
-						return "", errors.New("id factory error")
-					}),
-				),
+			writer: NewWriter(WithCodec(codec.Mock{}), WithIdentifierFactory(func() (string, error) {
+				return "", errors.New("id factory error")
+			})),
 			ctx: persistence.SetTransactionContext[*sql.Tx](context.TODO(), tx),
 			inMsgs: []streams.Message{
 				{
@@ -177,12 +137,9 @@ func TestWriter_Write(t *testing.T) {
 		},
 		{
 			name: "valid tx",
-			writer: NewWriter(WithCodec(codec.Mock{})).
-				WithParentConfig(
-					streams.WithIdentifierFactory(func() (string, error) {
-						return "1", nil
-					}),
-				),
+			writer: NewWriter(WithCodec(codec.Mock{}), WithIdentifierFactory(func() (string, error) {
+				return "1", nil
+			})),
 			ctx: persistence.SetTransactionContext[*sql.Tx](context.TODO(), tx),
 			inMsgs: []streams.Message{
 				{

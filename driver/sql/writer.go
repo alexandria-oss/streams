@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/alexandria-oss/streams/codec"
-
 	"github.com/alexandria-oss/streams"
+	"github.com/alexandria-oss/streams/codec"
 	"github.com/alexandria-oss/streams/persistence"
+	"github.com/alexandria-oss/streams/proxy/egress"
 )
 
 // A Writer is a SQL database writer.
@@ -31,16 +31,16 @@ type Writer struct {
 // A WriterConfig is the Writer configuration.
 // Writer uses streams.IdentifierFactory to generate batch identifiers.
 type WriterConfig struct {
-	streams.WriterConfig
+	IdentifierFactory streams.IdentifierFactory
 	Codec             codec.Codec // used to encode message batches, so it can be stored on the database (default codec.ProtocolBuffers).
 	WriterEgressTable string      // table to write message batches to be later published.
 }
 
 func newWriterDefaults() WriterConfig {
 	return WriterConfig{
-		WriterConfig:      streams.DefaultWriterConfig,
+		IdentifierFactory: streams.NewKSUID,
 		Codec:             codec.ProtocolBuffers{},
-		WriterEgressTable: "streams_egress",
+		WriterEgressTable: egress.DefaultEgressTableName,
 	}
 }
 
@@ -60,18 +60,6 @@ func NewWriterWithConfig(cfg WriterConfig) Writer {
 	return Writer{
 		cfg: cfg,
 	}
-}
-
-// WithParentConfig sets streams.WriterConfig fields.
-//
-// This function SHOULD be used (if required) as the following example:
-//
-// writer := sql.NewWriter().WithParentConfig()
-func (w Writer) WithParentConfig(opts ...streams.WriterOption) Writer {
-	for _, o := range opts {
-		o.ApplyWriterCfg(&w.cfg.WriterConfig)
-	}
-	return w
 }
 
 // Write append a new batch of messages into the egress table.

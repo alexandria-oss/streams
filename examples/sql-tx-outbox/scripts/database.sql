@@ -10,8 +10,7 @@ CREATE TABLE IF NOT EXISTS user_payments_stats(
 );
 
 CREATE TABLE IF NOT EXISTS streams_egress(
-    batch_id CHAR(128) PRIMARY KEY,
-    in_flight BOOLEAN DEFAULT FALSE,
+    batch_id CHAR(27) PRIMARY KEY,
     message_count INTEGER DEFAULT 0,
     raw_data BYTEA NOT NULL
 );

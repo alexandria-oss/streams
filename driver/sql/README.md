@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS streams_egress(
     batch_id CHAR(27) PRIMARY KEY,
     in_flight BOOLEAN DEFAULT FALSE,
     message_count INTEGER DEFAULT 0,
+    write_retries INTEGER DEFAULT 0,
+    last_write_error VARCHAR(255),
     raw_data BYTEA NOT NULL
 );
 ```
