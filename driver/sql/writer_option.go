@@ -1,7 +1,6 @@
 package sql
 
 import (
-	"github.com/alexandria-oss/streams"
 	"github.com/alexandria-oss/streams/codec"
 )
 
@@ -40,20 +39,4 @@ func (o codecOption) apply(opts *WriterConfig) {
 // a database efficiently.
 func WithCodec(c codec.Codec) WriterOption {
 	return codecOption{codec: c}
-}
-
-type identifierFactoryOption struct {
-	identifierFactory streams.IdentifierFactory
-}
-
-var _ WriterOption = identifierFactoryOption{}
-
-func (o identifierFactoryOption) apply(opts *WriterConfig) {
-	opts.IdentifierFactory = o.identifierFactory
-}
-
-// WithIdentifierFactory sets the IdentifierFactory algorithm used by inner processes when a unique identifier
-// is required (e.g. generate an id for an incoming message batch).
-func WithIdentifierFactory(f streams.IdentifierFactory) WriterOption {
-	return identifierFactoryOption{identifierFactory: f}
 }

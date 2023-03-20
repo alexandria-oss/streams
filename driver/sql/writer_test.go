@@ -10,7 +10,6 @@ import (
 	"github.com/alexandria-oss/streams"
 	"github.com/alexandria-oss/streams/codec"
 	"github.com/alexandria-oss/streams/persistence"
-	"github.com/segmentio/ksuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,9 +29,6 @@ func TestNewWriter(t *testing.T) {
 			name: "default values",
 			opts: nil,
 			validateFunc: func(t *testing.T, w Writer) {
-				id, _ := w.cfg.IdentifierFactory()
-				_, errID := ksuid.Parse(id)
-				assert.NoError(t, errID)
 				assert.IsType(t, codec.ProtocolBuffers{}, w.cfg.Codec)
 				assert.Equal(t, "streams_egress", w.cfg.WriterEgressTable)
 			},
@@ -44,9 +40,6 @@ func TestNewWriter(t *testing.T) {
 				WithCodec(codec.JSON{}),
 			},
 			validateFunc: func(t *testing.T, w Writer) {
-				id, _ := w.cfg.IdentifierFactory()
-				_, errID := ksuid.Parse(id)
-				assert.NoError(t, errID)
 				assert.IsType(t, codec.JSON{}, w.cfg.Codec)
 				assert.Equal(t, "foo_table", w.cfg.WriterEgressTable)
 			},
@@ -106,11 +99,12 @@ func TestWriter_Write(t *testing.T) {
 			name: "codec fail",
 			writer: NewWriter(WithCodec(codec.Mock{
 				EncodeError: errors.New("codec error"),
-			}), WithIdentifierFactory(func() (string, error) {
-				return "1", nil
 			}),
 			),
-			ctx: persistence.SetTransactionContext[*sql.Tx](context.TODO(), tx),
+			ctx: persistence.SetTransactionContext(context.TODO(), persistence.TransactionContext[*sql.Tx]{
+				TransactionID: "1",
+				Tx:            tx,
+			}),
 			inMsgs: []streams.Message{
 				{
 					StreamName:  "bar",
@@ -121,26 +115,12 @@ func TestWriter_Write(t *testing.T) {
 			err: errors.New("codec error"),
 		},
 		{
-			name: "id factory fail",
-			writer: NewWriter(WithCodec(codec.Mock{}), WithIdentifierFactory(func() (string, error) {
-				return "", errors.New("id factory error")
-			})),
-			ctx: persistence.SetTransactionContext[*sql.Tx](context.TODO(), tx),
-			inMsgs: []streams.Message{
-				{
-					StreamName:  "bar",
-					ContentType: "application/foo",
-					Data:        []byte("foo"),
-				},
-			},
-			err: errors.New("id factory error"),
-		},
-		{
-			name: "valid tx",
-			writer: NewWriter(WithCodec(codec.Mock{}), WithIdentifierFactory(func() (string, error) {
-				return "1", nil
-			})),
-			ctx: persistence.SetTransactionContext[*sql.Tx](context.TODO(), tx),
+			name:   "valid tx",
+			writer: NewWriter(WithCodec(codec.Mock{})),
+			ctx: persistence.SetTransactionContext[*sql.Tx](context.TODO(), persistence.TransactionContext[*sql.Tx]{
+				TransactionID: "1",
+				Tx:            tx,
+			}),
 			inMsgs: []streams.Message{
 				{
 					StreamName:  "bar",

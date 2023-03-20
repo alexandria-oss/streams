@@ -15,6 +15,10 @@ type ProtocolBuffers struct{}
 var _ Codec = ProtocolBuffers{}
 
 func newProtobufMessage(v any) (proto.Message, error) {
+	if v == nil {
+		return nil, ErrInvalidFormat
+	}
+
 	msg, ok := v.(proto.Message)
 	if !ok {
 		return nil, ErrInvalidFormat

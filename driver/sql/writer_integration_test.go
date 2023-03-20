@@ -60,7 +60,10 @@ func (s *writerSuite) TestWrite() {
 	tx, err := conn.BeginTx(requestContext, &sql.TxOptions{})
 	s.Require().NoError(err)
 
-	requestContext = persistence.SetTransactionContext(requestContext, tx)
+	requestContext = persistence.SetTransactionContext(requestContext, persistence.TransactionContext[*sql.Tx]{
+		TransactionID: "",
+		Tx:            tx,
+	})
 
 	_, err = tx.ExecContext(context.TODO(), "INSERT INTO payments(payment_id,user_id,amount) VALUES ($1,$2,$3)",
 		"123", "aruiz", 89.99)

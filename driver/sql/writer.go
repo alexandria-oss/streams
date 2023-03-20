@@ -28,17 +28,17 @@ type Writer struct {
 	cfg WriterConfig
 }
 
+var _ streams.Writer = Writer{}
+
 // A WriterConfig is the Writer configuration.
 // Writer uses streams.IdentifierFactory to generate batch identifiers.
 type WriterConfig struct {
-	IdentifierFactory streams.IdentifierFactory
 	Codec             codec.Codec // used to encode message batches, so it can be stored on the database (default codec.ProtocolBuffers).
 	WriterEgressTable string      // table to write message batches to be later published.
 }
 
 func newWriterDefaults() WriterConfig {
 	return WriterConfig{
-		IdentifierFactory: streams.NewKSUID,
 		Codec:             codec.ProtocolBuffers{},
 		WriterEgressTable: egress.DefaultEgressTableName,
 	}
@@ -67,17 +67,14 @@ func NewWriterWithConfig(cfg WriterConfig) Writer {
 // A transaction context (persistence.SetTransactionContext) MUST be set before calling this routine.
 // This is because Writer instances obtain the sql.Tx instance from the context.
 // If no context is found, then Writer.Write will fail.
+//
+// Batch identifier will be taken from TransactionContext.TransactionID.
 func (w Writer) Write(ctx context.Context, msgBatch []streams.Message) (err error) {
 	if len(msgBatch) == 0 {
 		return streams.ErrEmptyMessage
 	}
 
-	tx, err := persistence.GetTransactionContext[*sql.Tx](ctx)
-	if err != nil {
-		return err
-	}
-
-	batchID, err := w.cfg.IdentifierFactory()
+	txCtx, err := persistence.GetTransactionContext[*sql.Tx](ctx)
 	if err != nil {
 		return err
 	}
@@ -93,13 +90,13 @@ func (w Writer) Write(ctx context.Context, msgBatch []streams.Message) (err erro
 	}
 
 	query := fmt.Sprintf("INSERT INTO %s(batch_id,message_count,raw_data) VALUES ($1,$2,$3)", w.cfg.WriterEgressTable)
-	stmt, err := tx.PrepareContext(ctx, query)
+	stmt, err := txCtx.Tx.PrepareContext(ctx, query)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	res, err := stmt.Exec(batchID, len(msgBatch), encodedData)
+	res, err := stmt.Exec(txCtx.TransactionID, len(msgBatch), encodedData)
 	if err != nil {
 		return err
 	} else if writeRowCount, _ := res.RowsAffected(); writeRowCount <= 0 {

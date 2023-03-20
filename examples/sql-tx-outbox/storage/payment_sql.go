@@ -19,7 +19,7 @@ func (p PaymentSQL) Save(ctx context.Context, data payment.Payment) error {
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, "INSERT INTO payments(payment_id, user_id, amount) VALUES ($1,$2,$3)",
+	_, err = tx.Tx.ExecContext(ctx, "INSERT INTO payments(payment_id, user_id, amount) VALUES ($1,$2,$3)",
 		data.ID, data.UserID, data.Amount)
 	if err != nil {
 		return err
