@@ -23,7 +23,7 @@ func NewReader(b *Bus) Reader {
 	}
 }
 
-func (r Reader) Read(_ context.Context, stream string, handler streams.ReaderHandleFunc) error {
-	r.bus.Subscribe(stream, handler)
+func (r Reader) Read(_ context.Context, task streams.ReadTask) error {
+	r.bus.Subscribe(task.Stream, task.Handler)
 	return nil
 }

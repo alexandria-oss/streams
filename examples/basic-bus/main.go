@@ -27,15 +27,23 @@ func main() {
 	// 4. Register reader instances, each reader.Read() call is a new reader task. Each task is handled concurrently
 	// and is an independent process. Furthermore, as tasks are executed concurrently, execution ordering is NOT
 	// guaranteed.
-	_ = reader.Read(context.TODO(), streamName, func(ctx context.Context, msg streams.Message) error {
-		log.Printf("[handler-0] at foo stream | %+v", msg)
-		log.Printf("[handler-0] at foo stream | %s", string(msg.Data))
-		return nil
+	_ = reader.Read(context.TODO(), streams.ReadTask{
+		Stream: streamName,
+		Handler: func(ctx context.Context, msg streams.Message) error {
+			log.Printf("[handler-0] at foo stream | %+v", msg)
+			log.Printf("[handler-0] at foo stream | %s", string(msg.Data))
+			return nil
+		},
+		ExternalArgs: nil,
 	})
-	_ = reader.Read(context.TODO(), streamName, func(ctx context.Context, msg streams.Message) error {
-		log.Printf("[handler-1] at foo stream | %v", msg)
-		log.Printf("[handler-1] at foo stream | %s", string(msg.Data))
-		return nil
+	_ = reader.Read(context.TODO(), streams.ReadTask{
+		Stream: streamName,
+		Handler: func(ctx context.Context, msg streams.Message) error {
+			log.Printf("[handler-1] at foo stream | %v", msg)
+			log.Printf("[handler-1] at foo stream | %s", string(msg.Data))
+			return nil
+		},
+		ExternalArgs: nil,
 	})
 
 	// 5. Register a writer instance. Each call to writer.Write() will write a new entry into the bus

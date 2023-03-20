@@ -80,8 +80,11 @@ func (e Forwarder) Start() error {
 		},
 	)
 	retry.SetJitter(0.75)
-	err := e.schedReader.Read(context.Background(), forwarderWorkerStream,
-		streams.WithReaderRetry(retry)(streams.WithReaderErrorLogger(e.cfg.Logger)(e.scheduleJob)))
+	err := e.schedReader.Read(context.Background(), streams.ReadTask{
+		Stream:       forwarderWorkerStream,
+		Handler:      streams.WithReaderRetry(retry)(streams.WithReaderErrorLogger(e.cfg.Logger)(e.scheduleJob)),
+		ExternalArgs: nil,
+	})
 	if err != nil {
 		return err
 	}

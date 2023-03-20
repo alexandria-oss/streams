@@ -6,9 +6,11 @@ import (
 )
 
 var (
-	ErrBusIsShutdown = errors.New("streams: bus has been terminated")
-	ErrEmptyMessage  = errors.New("streams: message is empty")
-	ErrUnrecoverable = errors.New("streams: unrecoverable error")
+	ErrBusIsShutdown          = errors.New("streams: bus has been terminated")
+	ErrEmptyMessage           = errors.New("streams: message is empty")
+	ErrUnrecoverable          = errors.New("streams: unrecoverable error")
+	ErrEventNotFound          = errors.New("streams: event not found")
+	ErrNoSubscriberRegistered = errors.New("streams: subscriber scheduler has no subscriber tasks")
 )
 
 // A ErrUnrecoverableWrap is a special wrapper for certain type of errors with no recoverable action.

@@ -126,10 +126,14 @@ func TestReaderWriter(t *testing.T) {
 	wasHandlerExec := false
 	waitChan := make(chan struct{}, 1)
 
-	err := reader.Read(context.TODO(), "foo", func(ctx context.Context, msg streams.Message) error {
-		wasHandlerExec = true
-		waitChan <- struct{}{}
-		return nil
+	err := reader.Read(context.TODO(), streams.ReadTask{
+		Stream: "foo",
+		Handler: func(ctx context.Context, msg streams.Message) error {
+			wasHandlerExec = true
+			waitChan <- struct{}{}
+			return nil
+		},
+		ExternalArgs: nil,
 	})
 	require.NoError(t, err)
 

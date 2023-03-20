@@ -16,6 +16,7 @@ import (
 // Zero-value IS NOT ready to use, please call NewBus routine instead.
 type Bus struct {
 	msgQueue             chan streams.Message
+	subscribeLock        sync.Mutex
 	readerReg            sync.Map
 	readerHandlerTimeout time.Duration
 
@@ -64,6 +65,7 @@ func NewBus(cfg Config) *Bus {
 	readyWg.Add(1)
 	return &Bus{
 		msgQueue:             msgQueue,
+		subscribeLock:        sync.Mutex{},
 		readerReg:            sync.Map{},
 		readerHandlerTimeout: cfg.ReaderHandlerTimeout,
 		isReady:              atomic.Uint32{},
@@ -159,6 +161,9 @@ func (b *Bus) Publish(msg streams.Message) error {
 
 // Subscribe appends a reader handler to a stream.
 func (b *Bus) Subscribe(stream string, handler streams.ReaderHandleFunc) {
+	b.subscribeLock.Lock()
+	defer b.subscribeLock.Unlock()
+
 	subscribers := []streams.ReaderHandleFunc{handler}
 	subsAny, ok := b.readerReg.Load(stream)
 	if ok {

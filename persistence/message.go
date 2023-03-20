@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"github.com/alexandria-oss/streams"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // NewTransportMessage allocates a TransportMessage from a streams.Message.
@@ -9,8 +10,11 @@ func NewTransportMessage(msg streams.Message) *TransportMessage {
 	return &TransportMessage{
 		MessageId:   msg.ID,
 		StreamName:  msg.StreamName,
+		StreamKey:   msg.StreamKey,
+		Headers:     msg.Headers,
 		ContentType: msg.ContentType,
 		Data:        msg.Data,
+		Time:        timestamppb.New(msg.Time),
 	}
 }
 
@@ -34,8 +38,11 @@ func NewMessage(batchMsg *TransportMessage) streams.Message {
 	return streams.Message{
 		ID:          batchMsg.GetMessageId(),
 		StreamName:  batchMsg.GetStreamName(),
+		StreamKey:   batchMsg.GetStreamKey(),
+		Headers:     batchMsg.GetHeaders(),
 		ContentType: batchMsg.GetContentType(),
 		Data:        batchMsg.GetData(),
+		Time:        batchMsg.GetTime().AsTime(),
 	}
 }
 

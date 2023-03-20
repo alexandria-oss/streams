@@ -1,6 +1,8 @@
 syntax = "proto3";
 package streams;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/alexandria-oss/streams/persistence";
 option optimize_for = SPEED;
 
@@ -9,8 +11,11 @@ option optimize_for = SPEED;
 message TransportMessage {
   string messageId = 1;
   string streamName = 2;
-  string contentType = 3;
-  bytes data = 4;
+  string streamKey = 3;
+  map<string,string> headers = 4;
+  string contentType = 5;
+  bytes data = 6;
+  google.protobuf.Timestamp time = 7;
 }
 
 // A TransportMessageBatch is an aggregate of TransportMessage(s) used by `streams` package to pass information between
