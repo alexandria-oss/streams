@@ -1,0 +1,11 @@
+[package]
+name = "egress-proxy-sql-poller"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+config = "0.13.3"
+lazy_static = "1.4.0"
+serde = "1.0.158"
+serde_derive = "1.0.158"
+tokio = { version = "1.26.0", features = ["full"] }
