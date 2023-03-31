@@ -72,40 +72,40 @@ func NewForwarder(cfg ForwarderConfig) Forwarder {
 
 // Start initializes the Forwarder instance, blocking the I/O.
 // The instance contains internal job scheduling mechanisms for asynchronous job processing.
-func (e Forwarder) Start() error {
+func (f Forwarder) Start() error {
 	retry := retrier.New(retrier.LimitedExponentialBackoff(
-		e.cfg.ForwardJobTotalRetries, e.cfg.ForwardJobRetryBackoff, e.cfg.ForwardJobRetryBackoffMax),
+		f.cfg.ForwardJobTotalRetries, f.cfg.ForwardJobRetryBackoff, f.cfg.ForwardJobRetryBackoffMax),
 		retrier.BlacklistClassifier{
 			streams.ErrUnrecoverable,
 		},
 	)
 	retry.SetJitter(0.75)
-	err := e.schedReader.Read(context.Background(), streams.ReadTask{
+	err := f.schedReader.Read(context.Background(), streams.ReadTask{
 		Stream:       forwarderWorkerStream,
-		Handler:      streams.WithReaderRetry(retry)(streams.WithReaderErrorLogger(e.cfg.Logger)(e.scheduleJob)),
+		Handler:      streams.WithReaderRetry(retry)(streams.WithReaderErrorLogger(f.cfg.Logger)(f.scheduleJob)),
 		ExternalArgs: nil,
 	})
 	if err != nil {
 		return err
 	}
-	e.cfg.Logger.Printf("starting forwarder")
-	e.workerSchedBus.Start()
+	f.cfg.Logger.Printf("starting forwarder")
+	f.workerSchedBus.Start()
 	return nil
 }
 
 // Shutdown gracefully shuts down the Forwarder instance.
-func (e Forwarder) Shutdown() {
-	e.cfg.Logger.Print("shutting forwarder down")
-	e.workerSchedBus.Shutdown()
-	e.cfg.Logger.Print("forwarder has been terminated")
+func (f Forwarder) Shutdown() {
+	f.cfg.Logger.Print("shutting forwarder down")
+	f.workerSchedBus.Shutdown()
+	f.cfg.Logger.Print("forwarder has been terminated")
 }
 
 // Forward triggers a new forward job for the specified batch.
-func (e Forwarder) Forward(batchID string) error {
+func (f Forwarder) Forward(batchID string) error {
 	if len(batchID) == 0 {
 		return streams.ErrEmptyMessage
 	}
-	return e.schedWriter.Write(context.Background(), []streams.Message{
+	return f.schedWriter.Write(context.Background(), []streams.Message{
 		{
 			StreamName: forwarderWorkerStream,
 			Data:       []byte(batchID),
@@ -113,31 +113,31 @@ func (e Forwarder) Forward(batchID string) error {
 	})
 }
 
-func (e Forwarder) scheduleJob(ctx context.Context, msg streams.Message) error {
+func (f Forwarder) scheduleJob(ctx context.Context, msg streams.Message) error {
 	batchID := string(msg.Data)
-	return e.sendBatch(ctx, batchID)
+	return f.sendBatch(ctx, batchID)
 }
 
-func (e Forwarder) sendBatch(ctx context.Context, batchID string) (err error) {
-	batch, err := e.cfg.Storage.GetBatch(ctx, batchID)
+func (f Forwarder) sendBatch(ctx context.Context, batchID string) (err error) {
+	batch, err := f.cfg.Storage.GetBatch(ctx, batchID)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
 			return
-		} else if errCommit := e.cfg.Storage.Commit(ctx, batchID); errCommit != nil {
+		} else if errCommit := f.cfg.Storage.Commit(ctx, batchID); errCommit != nil {
 			err = errCommit
 			return
 		}
 
-		e.cfg.Logger.Printf("forwarded traffic from batch_id <%s>", batchID)
+		f.cfg.Logger.Printf("forwarded traffic from batch_id <%s>", batchID)
 	}()
 
 	transportBatch := &persistence.TransportMessageBatch{}
-	if err = e.cfg.Codec.Decode(batch.TransportBatchRaw, transportBatch); err != nil {
+	if err = f.cfg.Codec.Decode(batch.TransportBatchRaw, transportBatch); err != nil {
 		return streams.ErrUnrecoverableWrap{ParentErr: err}
 	}
 
-	return e.cfg.Writer.Write(ctx, persistence.NewMessages(transportBatch))
+	return f.cfg.Writer.Write(ctx, persistence.NewMessages(transportBatch))
 }
