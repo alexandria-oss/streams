@@ -21,7 +21,7 @@ func main() {
 	sysChan := make(chan os.Signal, 2)
 	signal.Notify(sysChan, os.Interrupt, syscall.SIGTERM)
 
-	db, err := sql.Open("postgres", "user=postgres password=root sslmode=disable port=6432 host=localhost database=sample_database")
+	db, err := sql.Open("postgres", "user=postgres password=root sslmode=disable port=5432 host=localhost database=sample_database")
 	if err != nil {
 		panic(err)
 	}
