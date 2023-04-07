@@ -39,8 +39,8 @@ func main() {
 	signal.Notify(sysChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		if err = l.Start(); err != nil {
-			agent.DefaultLogger.Err(err).Msg("listener execution process failed")
-			os.Exit(1)
+			agent.DefaultLogger.Err(err).Msg("fatal failure detected, stopping agent")
+			sysChan <- os.Interrupt
 		}
 	}()
 	<-sysChan

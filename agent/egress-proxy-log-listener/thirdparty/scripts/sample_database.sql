@@ -5,10 +5,10 @@ CREATE TABLE IF NOT EXISTS streams_egress(
      raw_data BYTEA NOT NULL
 );
 
-SELECT pg_create_logical_replication_slot('streams_egress_proxy', 'pgoutput');
+-- SELECT pg_create_logical_replication_slot('streams_egress_proxy', 'pgoutput');
 
 CREATE USER streams_egress_proxy_replicator WITH REPLICATION PASSWORD 'foobar';
 
 GRANT ALL ON SCHEMA public TO streams_egress_proxy_replicator;
 
-CREATE PUBLICATION streams_egress FOR TABLE public.streams_egress ;
+CREATE PUBLICATION streams_egress_proxy FOR TABLE public.streams_egress ;
