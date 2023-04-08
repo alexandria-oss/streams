@@ -19,19 +19,16 @@ while getopts ":v:m:" opt; do
   esac
 done
 
-MAJOR_VERSION=""
-VERSION_PREFIX=""
+TAG_DELIMITER="/"
 
-if [ "${#VERSION_TAG}" -ge 2 ]
+SPLIT_TAG=(${VERSION_TAG//"$TAG_DELIMITER"/ })
+NORMALIZED_TAG=${SPLIT_TAG[2]}
+
+if [ "${#SPLIT_TAG[@]}" -eq 1 ];
 then
-  VERSION_PREFIX="${VERSION_TAG:0:2}"
+  NORMALIZED_TAG="$VERSION_TAG"
 fi
 
-if [ "$VERSION_PREFIX" != "" ] && [ "$VERSION_PREFIX" != "v0" ] && [ "$VERSION_PREFIX" != "v1" ]
-then
-  MAJOR_VERSION="/$VERSION_PREFIX"
-fi
-
-GO_PROXY_URL=https://proxy.golang.org/github.com/alexandria-oss/"$MODULE_NAME""$MAJOR_VERSION"/@v/"$VERSION_TAG".info
+GO_PROXY_URL=https://proxy.golang.org/github.com/alexandria-oss/"$MODULE_NAME"/@v/"$NORMALIZED_TAG".info
 echo "forcing package publishing using URL: $GO_PROXY_URL"
 curl "$GO_PROXY_URL"
