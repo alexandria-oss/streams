@@ -5,10 +5,13 @@ WORKDIR /streams-egress-proxy-agent
 RUN apk update && apk add --no-cache git
 
 COPY go.mod go.sum /streams-egress-proxy-agent/
-RUN go mod download
-RUN go mod verify
 
 ADD . .
+
+WORKDIR /streams-egress-proxy-agent/agent/egress-proxy-log-listener
+
+RUN go mod download
+RUN go mod verify
 
 RUN CG0_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /egress-proxy-agent ./cmd/proxy-agent/main.go
 

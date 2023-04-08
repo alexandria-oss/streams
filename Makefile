@@ -22,3 +22,6 @@ gen-proto: $(GO_BUILD_DIR)/$(TARGET_EXEC)
 
 publish-pkg:
 	chmod +x publish-go-pkg.sh && ./publish-go-pkg.sh -v $(version) -m $(module_name)
+
+build-egress-proxy-log-agent:
+	docker build -f agent/egress-proxy-log-listener/Dockerfile -t alexandria/egress-proxy-agent:latest .
