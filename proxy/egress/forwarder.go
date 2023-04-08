@@ -2,6 +2,7 @@ package egress
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"time"
@@ -14,7 +15,8 @@ import (
 )
 
 const (
-	forwarderWorkerStream = "internal.egress.forwarder.scheduler.jobs" // internal forwarder scheduler job queue.
+	forwarderRawWorkerStream = "internal.egress.forwarder.scheduler.jobs.raw" // internal forwarder scheduler job queue.
+	forwarderWorkerStream    = "internal.egress.forwarder.scheduler.jobs"     // internal forwarder scheduler job queue.
 )
 
 // A Forwarder is an internal component used by an egress proxy agent to redirect queued-traffic (i.e. stream messages)
@@ -81,6 +83,14 @@ func (f Forwarder) Start() error {
 	)
 	retry.SetJitter(0.75)
 	err := f.schedReader.Read(context.Background(), streams.ReadTask{
+		Stream:       forwarderRawWorkerStream,
+		Handler:      streams.WithReaderRetry(retry)(streams.WithReaderErrorLogger(f.cfg.Logger)(f.scheduleRawJob)),
+		ExternalArgs: nil,
+	})
+	if err != nil {
+		return err
+	}
+	err = f.schedReader.Read(context.Background(), streams.ReadTask{
 		Stream:       forwarderWorkerStream,
 		Handler:      streams.WithReaderRetry(retry)(streams.WithReaderErrorLogger(f.cfg.Logger)(f.scheduleJob)),
 		ExternalArgs: nil,
@@ -107,31 +117,52 @@ func (f Forwarder) Forward(batchID string) error {
 	}
 	return f.schedWriter.Write(context.Background(), []streams.Message{
 		{
-			StreamName: forwarderWorkerStream,
+			StreamName: forwarderRawWorkerStream,
 			Data:       []byte(batchID),
 		},
 	})
 }
 
-func (f Forwarder) scheduleJob(ctx context.Context, msg streams.Message) error {
-	batchID := string(msg.Data)
-	return f.sendBatch(ctx, batchID)
+// ForwardBatch triggers a new forward job for the specified batch.
+func (f Forwarder) ForwardBatch(batch Batch) error {
+	return f.schedWriter.Write(context.Background(), []streams.Message{
+		{
+			StreamName:  forwarderWorkerStream,
+			Data:        []byte(batch.BatchID),
+			DecodedData: batch,
+		},
+	})
 }
 
-func (f Forwarder) sendBatch(ctx context.Context, batchID string) (err error) {
-	batch, err := f.cfg.Storage.GetBatch(ctx, batchID)
-	if err != nil {
-		return err
+func (f Forwarder) scheduleRawJob(ctx context.Context, msg streams.Message) error {
+	batchID := string(msg.Data)
+	return f.sendBatch(ctx, Batch{BatchID: batchID})
+}
+
+func (f Forwarder) scheduleJob(ctx context.Context, msg streams.Message) error {
+	batch, ok := msg.DecodedData.(Batch)
+	if !ok {
+		return errors.New("forwarder: invalid batch")
+	}
+	return f.sendBatch(ctx, batch)
+}
+
+func (f Forwarder) sendBatch(ctx context.Context, batch Batch) (err error) {
+	if len(batch.TransportBatchRaw) == 0 {
+		batch, err = f.cfg.Storage.GetBatch(ctx, batch.BatchID)
+		if err != nil {
+			return err
+		}
 	}
 	defer func() {
 		if err != nil {
 			return
-		} else if errCommit := f.cfg.Storage.Commit(ctx, batchID); errCommit != nil {
+		} else if errCommit := f.cfg.Storage.Commit(ctx, batch.BatchID); errCommit != nil {
 			err = errCommit
 			return
 		}
 
-		f.cfg.Logger.Printf("forwarded traffic from batch_id <%s>", batchID)
+		f.cfg.Logger.Printf("forwarded traffic from batch_id <%s>", batch.BatchID)
 	}()
 
 	transportBatch := &persistence.TransportMessageBatch{}

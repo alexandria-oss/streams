@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/alexandria-oss/streams"
 	"github.com/alexandria-oss/streams/codec"
@@ -89,14 +90,14 @@ func (w Writer) Write(ctx context.Context, msgBatch []streams.Message) (err erro
 		return err
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s(batch_id,message_count,raw_data) VALUES ($1,$2,$3)", w.cfg.WriterEgressTable)
+	query := fmt.Sprintf("INSERT INTO %s(batch_id,message_count,raw_data,insert_time) VALUES ($1,$2,$3,$4)", w.cfg.WriterEgressTable)
 	stmt, err := txCtx.Tx.PrepareContext(ctx, query)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	res, err := stmt.Exec(txCtx.TransactionID, len(msgBatch), encodedData)
+	res, err := stmt.Exec(txCtx.TransactionID, len(msgBatch), encodedData, time.Now().UTC())
 	if err != nil {
 		return err
 	} else if writeRowCount, _ := res.RowsAffected(); writeRowCount <= 0 {

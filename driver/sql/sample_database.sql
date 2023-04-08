@@ -8,5 +8,6 @@ CREATE TABLE IF NOT EXISTS payments(
 CREATE TABLE IF NOT EXISTS streams_egress(
     batch_id VARCHAR(27) PRIMARY KEY,
     message_count INTEGER DEFAULT 0,
-    raw_data BYTEA NOT NULL
+    raw_data BYTEA NOT NULL,
+    insert_time TIMESTAMP DEFAULT NOW()
 );

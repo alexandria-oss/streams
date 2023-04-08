@@ -10,6 +10,7 @@ import (
 	"time"
 
 	agent "github.com/alexandria-oss/streams/agent/egress-proxy-wal-listener"
+	"github.com/alexandria-oss/streams/proxy/egress"
 	"github.com/jackc/pglogrepl"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgproto3"
@@ -29,12 +30,7 @@ var defaultLoggerWAL = agent.DefaultLogger.With().
 
 type walConfig struct {
 	OutputPlugin          string
-	Username              string
-	Password              string
-	Address               string
-	Port                  int
-	Database              string
-	UseSSL                bool
+	ConnectionString      string
 	PublicationName       string
 	SlotName              string
 	EgressTable           string
@@ -47,40 +43,25 @@ func newWALConfig() walConfig {
 	viper.SetDefault("postgres.wal.output_plugin", "pgoutput")
 	viper.SetDefault("postgres.wal.publication_name", "streams_egress_proxy")
 	viper.SetDefault("postgres.wal.slot_name", "streams_egress_proxy_worker")
-	viper.SetDefault("postgres.wal.egress_table", "streams_egress")
+	viper.SetDefault("postgres.egress_table", "streams_egress")
 	viper.SetDefault("postgres.wal.enable_publish_creation", false)
 	viper.SetDefault("postgres.wal.log_polling_interval", time.Second*15)
 	viper.SetDefault("postgres.wal.worker_timeout", time.Second*5)
 	return walConfig{
 		OutputPlugin:          viper.GetString("postgres.wal.output_plugin"),
-		Username:              viper.GetString("postgres.wal.username"),
-		Password:              viper.GetString("postgres.wal.password"),
-		Address:               viper.GetString("postgres.wal.address"),
-		Port:                  viper.GetInt("postgres.wal.port"),
-		Database:              viper.GetString("postgres.wal.database"),
-		UseSSL:                viper.GetBool("postgres.wal.use_ssl"),
+		ConnectionString:      fmt.Sprintf("%s&replication=database", viper.GetString("postgres.connection_string")),
 		PublicationName:       viper.GetString("postgres.wal.publication_name"),
 		SlotName:              viper.GetString("postgres.wal.slot_name"),
-		EgressTable:           viper.GetString("postgres.wal.egress_table"),
+		EgressTable:           viper.GetString("postgres.egress_table"),
 		EnablePublishCreation: viper.GetBool("postgres.wal.enable_publish_creation"),
 		LogPollingInterval:    viper.GetDuration("postgres.wal.log_polling_interval"),
 		WorkerTimeout:         viper.GetDuration("postgres.wal.worker_timeout"),
 	}
 }
 
-func (c walConfig) connString() string {
-	buf := strings.Builder{}
-	buf.WriteString(fmt.Sprintf("postgres://%s:%s@%s:%d/%s?replication=database", c.Username, c.Password, c.Address,
-		c.Port, c.Database))
-	if c.UseSSL {
-		buf.WriteString("&sslMode=true")
-	}
-
-	return buf.String()
-}
-
 type WAL struct {
 	cfg               walConfig
+	fwd               egress.Forwarder
 	baseCtx           context.Context
 	baseCtxCancel     context.CancelFunc
 	inFlightProcesses sync.WaitGroup
@@ -98,9 +79,10 @@ type WAL struct {
 
 var _ Listener = &WAL{}
 
-func NewWAL() *WAL {
+func NewWAL(fwd egress.Forwarder) *WAL {
 	return &WAL{
 		cfg:               newWALConfig(),
+		fwd:               fwd,
 		inFlightProcesses: sync.WaitGroup{},
 		totalReads:        atomic.Uint64{},
 	}
@@ -109,7 +91,7 @@ func NewWAL() *WAL {
 func (w *WAL) Start() error {
 	w.baseCtx, w.baseCtxCancel = context.WithCancel(context.Background())
 	var err error
-	w.conn, err = pgconn.Connect(w.baseCtx, w.cfg.connString())
+	w.conn, err = pgconn.Connect(w.baseCtx, w.cfg.ConnectionString)
 	if err != nil {
 		return err
 	}
@@ -411,8 +393,16 @@ func (w *WAL) processLogicMessage(msg pglogrepl.Message) error {
 			Str("relation_name", rel.RelationName).
 			Uint32("relation_id", rel.RelationID).
 			Uint8("replica_identity", rel.ReplicaIdentity).
-			Any("values", values).
+			Int("total_values", len(values)).
 			Msg("decoded message")
+		batch := egress.Batch{
+			BatchID:           values["batch_id"].(string),
+			TransportBatchRaw: values["raw_data"].([]byte),
+			InsertTime:        values["insert_time"].(time.Time),
+		}
+		if fwdErr := w.fwd.ForwardBatch(batch); fwdErr != nil {
+			defaultLoggerWAL.Err(fwdErr).Msg("forwarder failed to proxy message")
+		}
 	default:
 		defaultLoggerWAL.Warn().
 			Str("message_type", logMsg.Type().String()).
@@ -431,5 +421,8 @@ func (w *WAL) Close(ctx context.Context) error {
 	defaultLoggerWAL.Info().Msg("shutting down")
 	w.baseCtxCancel()
 	w.inFlightProcesses.Wait()
+	if w.conn == nil {
+		return nil
+	}
 	return w.conn.Close(ctx)
 }

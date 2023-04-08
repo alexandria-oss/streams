@@ -1,12 +1,16 @@
 package egress
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // A Batch is an aggregate of messages written by a system ready to be published to message brokers or
 // similar infrastructure.
 type Batch struct {
 	BatchID           string
 	TransportBatchRaw []byte
+	InsertTime        time.Time
 }
 
 // A Storage is a special kind of storage where traffic is ingested (queued) so an egress proxy agent (or similar artifacts)

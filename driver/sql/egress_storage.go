@@ -51,14 +51,14 @@ func (e EgressStorage) GetBatch(ctx context.Context, batchID string) (egress.Bat
 		}
 	}()
 
-	query := fmt.Sprintf("SELECT batch_id,raw_data FROM %s WHERE batch_id = $1", e.cfg.TableName)
+	query := fmt.Sprintf("SELECT batch_id,raw_data,insert_time FROM %s WHERE batch_id = $1", e.cfg.TableName)
 	row := conn.QueryRowContext(ctx, query, batchID)
 	if err = row.Err(); err != nil {
 		return egress.Batch{}, err
 	}
 
 	batch := egress.Batch{}
-	return batch, row.Scan(&batch.BatchID, &batch.TransportBatchRaw)
+	return batch, row.Scan(&batch.BatchID, &batch.TransportBatchRaw, &batch.InsertTime)
 }
 
 func (e EgressStorage) Commit(ctx context.Context, batchID string) error {
