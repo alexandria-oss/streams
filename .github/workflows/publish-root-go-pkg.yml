@@ -4,13 +4,6 @@ on:
   push:
     tags:
       - '*'
-    tags-ignore:
-      - 'dynamodb/*'
-      - 'kafka/*'
-      - 'redis/*'
-      - 'sns/*'
-      - 'sqs/*'
-      - 'sql/*'
 
 jobs:
   publish:
