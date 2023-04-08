@@ -21,6 +21,8 @@ LABEL maintainer = "Alexandria OpenSource <oss@thealexandriaproject.com>"
 LABEL org.name="The Alexandria Project"
 LABEL org.image.title="Egress Proxy Agent for Alexandria Streams"
 LABEL org.image.description="An traffic egress proxy agent for Alexandria Streams toolkit, forwards buffered streams traffic from a database to actual streaming infrastructure"
+LABEL org.opencontainers.image.title="Egress Proxy Agent for Alexandria Streams"
+LABEL org.opencontainers.image.description="An traffic egress proxy agent for Alexandria Streams toolkit, forwards buffered streams traffic from a database to actual streaming infrastructure"
 
 # Required by health checks
 RUN apk --no-cache add curl

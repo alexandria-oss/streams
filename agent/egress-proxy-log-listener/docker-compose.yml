@@ -2,6 +2,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:13-alpine3.17
+    hostname: postgres
     container_name: postgres
     ports:
       - '5432:5432'
@@ -42,3 +43,12 @@ services:
     volumes:
       - ./thirdparty/scripts/kafka_update_run.sh:/tmp/update_run.sh
     command: "bash -c 'if [ ! -f /tmp/update_run.sh ]; then echo \"ERROR: Did you forget the update_run.sh file that came with this docker-compose.yml file?\" && exit 1 ; else /tmp/update_run.sh && /etc/confluent/docker/run ; fi'"
+
+  egress-proxy:
+    image: ghcr.io/alexandria-oss/egress-proxy-log-listener-agent:0.0.1-alpha.1
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - kafka
+    env_file:
+      - deployments/env.list

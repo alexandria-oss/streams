@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: streams-sample
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: egress-proxy-log-vault
+  namespace: streams-sample
+  labels:
+    app: egress-proxy-log
+stringData:
+  STREAMS_POSTGRES_CONNECTION_STRING: postgres://streams_egress_proxy_replicator:foobar@postgres:5432/sample_database?sslmode=disable
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: egress-proxy-log-cfg
+  namespace: streams-sample
+  labels:
+    app: egress-proxy-log
+data:
+  STREAMS_AGENT_LISTENER_DRIVER: postgres_wal
+  STREAMS_AGENT_WRITER_DRIVER: kafka
+  STREAMS_KAFKA_ADDRESSES: kafka:29092
+  STREAMS_KAFKA_ALLOW_TOPIC_AUTO_CREATION: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: egress-proxy-log
+  namespace: streams-sample
+  labels:
+    app: egress-proxy-log
+spec:
+  replicas: 3
+  revisionHistoryLimit: 10
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 2
+  selector:
+    matchLabels:
+      app: egress-proxy-log
+  template:
+    metadata:
+      labels:
+        app: egress-proxy-log
+        tier: stream-egress
+    spec:
+      containers:
+        - name: proxy-agent
+          image: ghcr.io/alexandria-oss/egress-proxy-log-listener-agent:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              memory: 128Mi
+              cpu: 250m
+          envFrom:
+            - configMapRef:
+                name: egress-proxy-log-cfg
+            - secretRef:
+                name: egress-proxy-log-vault
