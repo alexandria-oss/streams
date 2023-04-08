@@ -19,3 +19,6 @@ $(GO_BUILD_DIR)/$(TARGET_EXEC): $(SRCS)
 	rm -r $(GO_BUILD_DIR)/github.com
 
 gen-proto: $(GO_BUILD_DIR)/$(TARGET_EXEC)
+
+publish-pkg:
+	./publish-go-pkg.sh -v $(version) -m $(module_name)
