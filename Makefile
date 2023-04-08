@@ -21,4 +21,4 @@ $(GO_BUILD_DIR)/$(TARGET_EXEC): $(SRCS)
 gen-proto: $(GO_BUILD_DIR)/$(TARGET_EXEC)
 
 publish-pkg:
-	./publish-go-pkg.sh -v $(version) -m $(module_name)
+	chmod +x publish-go-pkg.sh && ./publish-go-pkg.sh -v $(version) -m $(module_name)
