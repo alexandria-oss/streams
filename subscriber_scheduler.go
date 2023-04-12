@@ -74,9 +74,7 @@ func (r *SubscriberScheduler) SubscribeSafe(event Event, handler ReaderHandleFun
 
 // Start schedules and spins up a worker for each registered ReadTask(s).
 func (r *SubscriberScheduler) Start() error {
-	if len(r.reg) == 0 {
-		return ErrNoSubscriberRegistered
-	} else if r.isShutdown {
+	if r.isShutdown {
 		return ErrBusIsShutdown
 	}
 
@@ -101,7 +99,9 @@ func (r *SubscriberScheduler) Start() error {
 // all workers have been properly shutdown.
 func (r *SubscriberScheduler) Shutdown() error {
 	r.isShutdown = true
-	r.baseCtxCancel()
+	if r.baseCtxCancel != nil {
+		r.baseCtxCancel()
+	}
 	r.inFlightWorkers.Wait()
 	return nil
 }
