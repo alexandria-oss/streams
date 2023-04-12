@@ -6,7 +6,7 @@ replace github.com/alexandria-oss/streams => ../../
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
-	github.com/alexandria-oss/streams v0.0.0-00010101000000-000000000000
+	github.com/alexandria-oss/streams v0.0.1-alpha.5
 	github.com/lib/pq v1.10.7
 	github.com/stretchr/testify v1.8.2
 )
