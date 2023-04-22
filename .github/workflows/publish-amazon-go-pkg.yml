@@ -1,0 +1,14 @@
+name: Publish Streams Amazon Driver Go Package
+
+on:
+  push:
+    tags:
+      - 'driver/amazon/**'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Force Go package publishing
+        run: make publish-pkg version="${{github.ref_name}}" module_name=streams/driver/amazon
