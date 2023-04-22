@@ -3,7 +3,7 @@ module sample
 go 1.18
 
 require (
-	github.com/alexandria-oss/streams v0.0.0-20230308031338-8e2e9d5dcb07
+	github.com/alexandria-oss/streams v0.0.1-alpha.5
 	github.com/alexandria-oss/streams/driver/kafka v0.0.0-20230320031154-f7c183d65d17
 	github.com/alexandria-oss/streams/driver/sql v0.0.0-00010101000000-000000000000
 	github.com/google/uuid v1.3.0
@@ -27,4 +27,5 @@ require (
 replace github.com/alexandria-oss/streams => ../../
 
 replace github.com/alexandria-oss/streams/driver/sql => ../../driver/sql
+
 replace github.com/alexandria-oss/streams/driver/kafka => ../../driver/kafka
