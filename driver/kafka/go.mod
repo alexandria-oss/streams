@@ -5,12 +5,13 @@ go 1.18
 replace github.com/alexandria-oss/streams => ../../
 
 require (
-	github.com/alexandria-oss/streams v0.0.0-00010101000000-000000000000
+	github.com/alexandria-oss/streams v0.0.1-alpha.7
 	github.com/segmentio/kafka-go v0.4.39
 	github.com/stretchr/testify v1.8.2
 )
 
 require (
+	github.com/allegro/bigcache/v3 v3.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.3.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
