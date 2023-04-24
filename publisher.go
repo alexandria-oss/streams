@@ -72,6 +72,29 @@ func (p Publisher) newMessage(event Event) (Message, error) {
 	}, nil
 }
 
+// builds a Message out from an Event with specified topic.
+func (p Publisher) newMessageWithTopic(topic string, event Event) (Message, error) {
+	msgID, err := p.idFactory()
+	if err != nil {
+		return Message{}, err
+	}
+
+	encodedMsg, err := p.codec.Encode(event)
+	if err != nil {
+		return Message{}, err
+	}
+
+	return Message{
+		ID:          msgID,
+		StreamName:  topic,
+		StreamKey:   event.GetKey(),
+		Headers:     event.GetHeaders(), // might require to merge maps here if we want to use `streams` internal headers.
+		ContentType: p.codec.ApplicationType(),
+		Data:        encodedMsg,
+		Time:        time.Now().UTC(),
+	}, nil
+}
+
 // Publish writes Event(s) into a topic specified on each Event.
 func (p Publisher) Publish(ctx context.Context, events ...Event) error {
 	msgBuf := make([]Message, 0, len(events))
@@ -90,11 +113,10 @@ func (p Publisher) Publish(ctx context.Context, events ...Event) error {
 func (p Publisher) PublishToTopic(ctx context.Context, topic string, events ...Event) error {
 	msgBuf := make([]Message, 0, len(events))
 	for _, ev := range events {
-		msg, err := p.newMessage(ev)
+		msg, err := p.newMessageWithTopic(topic, ev)
 		if err != nil {
 			return err
 		}
-		msg.StreamName = topic
 		msgBuf = append(msgBuf, msg)
 	}
 
