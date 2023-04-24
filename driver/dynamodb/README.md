@@ -38,6 +38,10 @@ In order for this driver to work, the database MUST have a deduplication table w
     {
       "AttributeName": "message_id",
       "AttributeType": "S"
+    },
+    {
+      "AttributeName": "expiration_time",
+      "AttributeType": "N"
     }
   ],
   "BillingMode": "PAY_PER_REQUEST"

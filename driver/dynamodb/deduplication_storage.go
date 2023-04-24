@@ -4,21 +4,21 @@ import (
 	"context"
 	"log"
 	"os"
-
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
-
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"strconv"
+	"time"
 
 	"github.com/alexandria-oss/streams"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 // DeduplicationStorageConfig is the configuration schema for Amazon DynamoDB streams.DeduplicationStorage implementation.
 type DeduplicationStorageConfig struct {
-	TableName   string
-	Logger      *log.Logger
-	ErrorLogger *log.Logger
+	TableName      string
+	Logger         *log.Logger
+	ErrorLogger    *log.Logger
+	RowTTLDuration time.Duration // Total duration for a row to be available; DynamoDB will remove the row automatically if configured.
 }
 
 // DeduplicationStorage is the Amazon DynamoDB streams.DeduplicationStorage
@@ -40,6 +40,9 @@ func NewDeduplicationStorage(cfg DeduplicationStorageConfig, client *dynamodb.Cl
 			cfg.ErrorLogger = logger
 		}
 	}
+	if cfg.RowTTLDuration == 0 {
+		cfg.RowTTLDuration = time.Minute * 60
+	}
 	return DeduplicationStorage{
 		client:   client,
 		cfg:      cfg,
@@ -55,6 +58,9 @@ func (d DeduplicationStorage) Commit(ctx context.Context, workerID, messageID st
 			},
 			"worker_id": &types.AttributeValueMemberS{
 				Value: workerID,
+			},
+			"expiration_time": &types.AttributeValueMemberN{
+				Value: strconv.Itoa(int(time.Now().UTC().Add(d.cfg.RowTTLDuration).Unix())),
 			},
 		},
 		TableName:                   d.tableRef,
