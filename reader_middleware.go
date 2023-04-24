@@ -79,8 +79,8 @@ func WithDeduplication(storage DeduplicationStorage) ReaderMiddlewareFunc {
 // Dead-letter queue messages are emitted to the Message.StreamName but with the suffix ".dlq".
 //
 // After failures, a dead-letter queue comes into play as engineering teams can manually/automatically
-// enqueue failed messages again into the main queue (i.e. re-drive policies), so messages can be processed
-// again without any overhead.
+// enqueue failed messages again into the original queue (i.e. re-drive/replay policies), so messages can be processed
+// again without further overhead.
 //
 // Moreover, this dead-letter queue could not only be a message bus like Apache Kafka or services like Amazon SQS;
 // even a blob storage service like Amazon S3 could implement Writer and retain failed messages.

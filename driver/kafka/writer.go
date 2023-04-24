@@ -7,12 +7,14 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+// A Writer type is the concrete implementation of streams.Writer using Apache Kafka.
 type Writer struct {
 	kWriter *kafka.Writer
 }
 
 var _ streams.Writer = Writer{}
 
+// NewWriter allocates a Writer instance.
 func NewWriter(kafkaWriter *kafka.Writer) Writer {
 	return Writer{kWriter: kafkaWriter}
 }

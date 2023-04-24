@@ -4,9 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/alexandria-oss/streams"
+	"github.com/stretchr/testify/assert"
 )
 
 type fakeEvent struct {
@@ -26,7 +25,7 @@ func TestSubscriberScheduler_Subscribe(t *testing.T) {
 	reg := streams.EventRegistry{}
 	reg.RegisterEvent(fakeEvent{}, "fake-stream")
 	sched := streams.NewSubscriberScheduler(nil, reg)
-	out := sched.Subscribe(fakeEvent{}, func(ctx context.Context, msg streams.Message) error {
+	out := sched.SubscribeEvent(fakeEvent{}, func(ctx context.Context, msg streams.Message) error {
 		return nil
 	}).SetArg("test", "this is a test")
 	assert.Equal(t, "this is a test", out.ExternalArgs["test"])

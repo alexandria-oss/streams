@@ -30,7 +30,7 @@ func TestBus(t *testing.T) {
 
 	bus := streams.NewBus(writer, reader)
 	bus.RegisterEvent(anyEvent{}, "org.alexandria.events")
-	bus.Subscribe(anyEvent{}, func(ctx context.Context, msg streams.Message) error {
+	bus.Subscribe("any.event", anyEvent{}, func(ctx context.Context, msg streams.Message) error {
 		assert.Equal(t, "123-foo", msg.StreamKey)
 		return nil
 	}).SetArg("some_arg", "test_arg")

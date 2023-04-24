@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// A Writer is a low-level component that writes into streams. Each message MUST have its own stream name specified.
+// A Writer is a low-level component that writes messages into streams. Each message MUST have its own stream name specified.
 type Writer interface {
 	// Write writes a message batch into a stream specified on each Message through the Message.StreamName field.
 	//

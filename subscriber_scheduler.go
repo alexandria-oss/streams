@@ -45,20 +45,40 @@ func (r *SubscriberScheduler) SubscribeTopic(topic string, handler ReaderHandleF
 }
 
 // Subscribe registers a stream reading job using Event registered topic from EventRegistry.
+// This routine will append a new entry to EventRegistry if Event was not found at first try, automating
+// event-topic registration.
+//
+// Returns a ReadTask instance ready to be chained to another builder routine (Fluent API-like).
+func (r *SubscriberScheduler) Subscribe(topic string, event Event, handler ReaderHandleFunc) *ReadTask {
+	topicEvent, err := r.eventReg.GetEventTopic(event)
+	if err != nil {
+		r.eventReg.RegisterEvent(event, topic)
+		topicEvent = topic
+	}
+
+	task := &ReadTask{
+		Stream:  topicEvent,
+		Handler: handler,
+	}
+	r.reg = append(r.reg, task)
+	return task
+}
+
+// SubscribeEvent registers a stream reading job using Event registered topic from EventRegistry.
 // This routine will panic if Event was not previously registered.
 //
 // Returns a ReadTask instance ready to be chained to another builder routine (Fluent API-like).
-func (r *SubscriberScheduler) Subscribe(event Event, handler ReaderHandleFunc) *ReadTask {
-	task, err := r.SubscribeSafe(event, handler)
+func (r *SubscriberScheduler) SubscribeEvent(event Event, handler ReaderHandleFunc) *ReadTask {
+	task, err := r.SubscribeEventSafe(event, handler)
 	if err != nil {
 		panic(err)
 	}
 	return task
 }
 
-// SubscribeSafe registers a stream reading job using Event registered topic from EventRegistry.
+// SubscribeEventSafe registers a stream reading job using Event registered topic from EventRegistry.
 // Returns ErrEventNotFound if Event was not previously registered.
-func (r *SubscriberScheduler) SubscribeSafe(event Event, handler ReaderHandleFunc) (*ReadTask, error) {
+func (r *SubscriberScheduler) SubscribeEventSafe(event Event, handler ReaderHandleFunc) (*ReadTask, error) {
 	topic, err := r.eventReg.GetEventTopic(event)
 	if err != nil {
 		return nil, err

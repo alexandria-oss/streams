@@ -13,22 +13,29 @@ import (
 )
 
 const (
-	ReaderTaskGroupIDKey       streams.ArgKey = "kafka-group-id"
-	ReaderTaskPartitionIDKey   streams.ArgKey = "kafka-partition-id"
-	ReaderTaskInitialOffsetKey streams.ArgKey = "kafka-init-offset"
+	// ReaderTaskGroupIDKey is the argument key to set up a reader to be placed in an Apache Kafka consumer group.
+	ReaderTaskGroupIDKey string = "kafka-group-id"
+	// ReaderTaskPartitionIDKey is the argument key to set up a reader to read from a specific partition of an Apache Kafka topic.
+	ReaderTaskPartitionIDKey string = "kafka-partition-id"
+	// ReaderTaskInitialOffsetKey is the argument key to set up a reader to start reading messages
+	// from a specific offset from the topic's partition append log.
+	ReaderTaskInitialOffsetKey string = "kafka-init-offset"
 )
 
+// ReaderConfig is the configuration for Reader.
 type ReaderConfig struct {
 	kafka.ReaderConfig
-	HandlerTimeout time.Duration
+	HandlerTimeout time.Duration // Maximum duration for message handler processes (streams.ReaderHandleFunc).
 }
 
+// A Reader type is the concrete implementation of streams.Reader using Apache Kafka.
 type Reader struct {
 	cfg ReaderConfig
 }
 
 var _ streams.Reader = &Reader{}
 
+// NewReader allocates a Reader instance.
 func NewReader(cfg ReaderConfig) Reader {
 	if cfg.Logger == nil || cfg.ErrorLogger == nil {
 		logger := log.New(os.Stdout, "streams.kafka: ", 0)

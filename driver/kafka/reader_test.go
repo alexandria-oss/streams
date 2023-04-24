@@ -113,7 +113,7 @@ func (s *readerSuite) TestReader_Partitioned() {
 			wg.Done()
 			return nil
 		},
-		ExternalArgs: map[streams.ArgKey]any{
+		ExternalArgs: map[string]any{
 			streamskafka.ReaderTaskPartitionIDKey:   0,
 			streamskafka.ReaderTaskInitialOffsetKey: int64(1),
 		},
@@ -159,7 +159,7 @@ func (s *readerSuite) TestReader_Group() {
 			wg.Done()
 			return nil
 		},
-		ExternalArgs: map[streams.ArgKey]any{
+		ExternalArgs: map[string]any{
 			streamskafka.ReaderTaskPartitionIDKey:   0,
 			streamskafka.ReaderTaskInitialOffsetKey: kafka.FirstOffset,
 			streamskafka.ReaderTaskGroupIDKey:       "test_group",

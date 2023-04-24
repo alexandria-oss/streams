@@ -2,22 +2,19 @@ package streams
 
 import "context"
 
-// ArgKey is the key type for ReadTask.ExternalArgs map.
-type ArgKey string
-
 // A ReadTask is the unit of information a SubscriberScheduler passes to Reader workers in order to start
 // stream-reading jobs. Use ExternalArgs to specify driver-specific configuration.
 type ReadTask struct {
 	Stream       string
 	Handler      ReaderHandleFunc
-	ExternalArgs map[ArgKey]any
+	ExternalArgs map[string]any
 }
 
 // SetArg sets an entry into ExternalArgs and returns the ReadTask instance ready to be chained to another builder
 // routine (Fluent API-like).
-func (t *ReadTask) SetArg(key ArgKey, value any) *ReadTask {
+func (t *ReadTask) SetArg(key string, value any) *ReadTask {
 	if t.ExternalArgs == nil {
-		t.ExternalArgs = make(map[ArgKey]any)
+		t.ExternalArgs = make(map[string]any)
 	}
 	t.ExternalArgs[key] = value
 	return t
