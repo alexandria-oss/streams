@@ -11,12 +11,20 @@ type ReadTask struct {
 }
 
 // SetArg sets an entry into ExternalArgs and returns the ReadTask instance ready to be chained to another builder
-// routine (Fluent API-like).
+// routine (Fluent API-like). Arguments will be later passed to Reader concrete implementations; useful for situations
+// where readers accept extra arguments such as consumer groups identifiers (Apache Kafka).
 func (t *ReadTask) SetArg(key string, value any) *ReadTask {
 	if t.ExternalArgs == nil {
 		t.ExternalArgs = make(map[string]any)
 	}
 	t.ExternalArgs[key] = value
+	return t
+}
+
+// WithMiddleware appends a ReaderHandleFunc instance to ReadTask.Handler; this is also known as
+// chain of responsibility pattern.
+func (t *ReadTask) WithMiddleware(middlewareFunc ReaderMiddlewareFunc) *ReadTask {
+	t.Handler = middlewareFunc(t.Handler)
 	return t
 }
 

@@ -6,10 +6,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/alexandria-oss/streams"
 	"github.com/alexandria-oss/streams/codec"
 	"github.com/alexandria-oss/streams/driver/chanbuf"
+	"github.com/allegro/bigcache/v3"
 )
 
 // 1. Create your event schema, add serialization tags of your like.
@@ -40,6 +42,13 @@ func main() {
 	var reader streams.Reader = chanbuf.NewReader(nil)
 	var writer streams.Writer = chanbuf.NewWriter(nil)
 
+	cache, errCache := bigcache.New(context.TODO(), bigcache.DefaultConfig(time.Minute*30))
+	if errCache != nil {
+		panic(errCache)
+	}
+	defer cache.Close()
+	var dedupeStorage streams.DeduplicationStorage = streams.NewEmbeddedDeduplicationStorage(streams.EmbeddedDeduplicationStorageConfig{}, cache)
+
 	// 3. Allocate your event bus instance.
 	bus := streams.NewBus(writer, reader)
 
@@ -62,7 +71,7 @@ func main() {
 		log.Print("[At subscriber 1]")
 		// DO SOMETHING HERE...
 		return nil
-	}).WithMiddleware(streams.WithReaderErrorLogger(log.New(os.Stdout, "", 0)))
+	}).WithMiddleware(streams.WithDeduplication("aggregate-user-metrics", dedupeStorage))
 
 	// 4b. [OPTIONAL] Register all of your event schemas used by readers/writers.
 	// bus.RegisterEvent(UserCreated{}, "")

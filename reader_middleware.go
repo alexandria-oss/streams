@@ -34,27 +34,16 @@ func WithReaderErrorLogger(logger *log.Logger) ReaderMiddlewareFunc {
 	}
 }
 
-// A DeduplicationStorage is a special kind of storage used by a data-in motion system to
-// keep track of duplicate messages.
-//
-// It is recommended to use in-memory (or at least external) storages
-// to increase performance significantly and reduce main database backpressure.
-type DeduplicationStorage interface {
-	// Commit registers and acknowledges a message has been processed correctly.
-	Commit(ctx context.Context, messageID string)
-	// IsDuplicated indicates if a message has been processed before.
-	IsDuplicated(ctx context.Context, messageID string) (bool, error)
-}
-
 // WithDeduplication appends to ReaderHandleFunc(s) a mechanism to deduplicate processed messages, ensuring
-// idempotency. Uses DeduplicationStorage to keep track of processed messages.
-func WithDeduplication(storage DeduplicationStorage) ReaderMiddlewareFunc {
+// idempotency. Uses DeduplicationStorage to keep track of processed messages and group identifier
+// to enable multiple isolated workers commit their processed messages to the same storage.
+func WithDeduplication(group string, storage DeduplicationStorage) ReaderMiddlewareFunc {
 	return func(next ReaderHandleFunc) ReaderHandleFunc {
 		return func(ctx context.Context, msg Message) error {
-			isDup, err := storage.IsDuplicated(ctx, msg.ID)
+			isDupe, err := storage.IsDuplicated(ctx, msg.Headers[group], msg.ID)
 			if err != nil {
 				return err
-			} else if isDup {
+			} else if isDupe {
 				return nil // ensure idempotency
 			}
 
@@ -66,7 +55,7 @@ func WithDeduplication(storage DeduplicationStorage) ReaderMiddlewareFunc {
 			// this routine could get retried and thus, we would duplicate processes, breaking
 			// deduplication guarantees.
 			// Concrete implementation should log its own errors anyway.
-			storage.Commit(ctx, msg.ID)
+			storage.Commit(ctx, group, msg.ID)
 			return nil
 		}
 	}

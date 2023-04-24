@@ -3,6 +3,7 @@ module github.com/alexandria-oss/streams
 go 1.18
 
 require (
+	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/eapache/go-resiliency v1.3.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.1
