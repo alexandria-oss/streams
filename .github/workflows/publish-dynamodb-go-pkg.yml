@@ -3,7 +3,7 @@ name: Publish Streams Amazon DynamoDB Driver Go Package
 on:
   push:
     tags:
-      - 'driver/amazon/**'
+      - 'driver/dynamodb/**'
 
 jobs:
   publish:
