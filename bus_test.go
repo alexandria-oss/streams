@@ -43,12 +43,12 @@ func TestBus(t *testing.T) {
 			t.Error(errStart)
 			return
 		}
-	}(&bus)
+	}(bus)
 	defer func(bus *streams.Bus) {
 		if errStop := bus.Shutdown(); errStop != nil {
 			t.Fatal(errStop)
 		}
-	}(&bus)
+	}(bus)
 	defer chanbuf.DefaultBus.Shutdown()
 	err := bus.Publish(context.TODO(), anyEvent{
 		ID: "123-foo",

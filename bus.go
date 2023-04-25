@@ -9,9 +9,9 @@ type Bus struct {
 }
 
 // NewBus allocates a Bus instance. Specify options to customize Publisher's default configurations.
-func NewBus(w Writer, r Reader, options ...PublisherOption) Bus {
+func NewBus(w Writer, r Reader, options ...PublisherOption) *Bus {
 	reg := make(EventRegistry)
-	return Bus{
+	return &Bus{
 		EventRegistry:       reg,
 		Publisher:           NewPublisher(w, reg, options...),
 		SubscriberScheduler: NewSubscriberScheduler(r, reg),
