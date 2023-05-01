@@ -40,8 +40,14 @@ func (w Writer) write(ctx context.Context, stream string, msgBatch []streams.Mes
 	isTopicFIFO := strings.HasSuffix(stream, ".fifo")
 	batchBuf := make([]types.PublishBatchRequestEntry, len(msgBatch))
 	for i, msg := range msgBatch {
+		msgStr := string(msg.Data)
 		msgJSON, err := jsoniter.Marshal(message{
-			Default: string(msg.Data),
+			Default:   msgStr,
+			Email:     msgStr,
+			EmailJSON: msgStr,
+			HTTP:      msgStr,
+			HTTPS:     msgStr,
+			SQS:       msgStr,
 		})
 		if err != nil {
 			return err
