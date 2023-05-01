@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/alexandria-oss/streams"
 	"github.com/alexandria-oss/streams/driver/amazon"
@@ -36,6 +37,7 @@ func NewWriter(cfg amazon.Config, client *sns.Client) Writer {
 }
 
 func (w Writer) write(ctx context.Context, stream string, msgBatch []streams.Message) error {
+	isTopicFIFO := strings.HasSuffix(stream, ".fifo")
 	batchBuf := make([]types.PublishBatchRequestEntry, len(msgBatch))
 	for i, msg := range msgBatch {
 		msgJSON, err := jsoniter.Marshal(message{
@@ -46,15 +48,21 @@ func (w Writer) write(ctx context.Context, stream string, msgBatch []streams.Mes
 		}
 		msgID := aws.String(msg.ID)
 		msgKey := aws.String(msg.StreamKey)
-		batchBuf[i] = types.PublishBatchRequestEntry{
+		entry := types.PublishBatchRequestEntry{
 			Id:                     msgID,
 			Message:                aws.String(string(msgJSON)),
 			MessageAttributes:      newMessageAttributeMap(msg),
-			MessageDeduplicationId: msgID,
-			MessageGroupId:         msgKey,
+			MessageDeduplicationId: nil,
+			MessageGroupId:         nil,
 			MessageStructure:       aws.String("json"),
 			Subject:                msgKey,
 		}
+		if isTopicFIFO {
+			entry.MessageDeduplicationId = msgID
+			entry.MessageGroupId = msgKey
+		}
+
+		batchBuf[i] = entry
 	}
 
 	topicARN := newTopic(w.baseARN, stream)
